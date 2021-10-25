@@ -16,7 +16,7 @@
 
 ReportRandomVarianceMCMC = function(x){
   
-  library(reshape)
+  library(reshape);library(MCMCglmm)
   
   MyRan <- data.frame(matrix(unlist(lapply(colnames(x$VCV), FUN = function(y){cbind(posterior.mode(x$VCV[,y]), HPDinterval(x$VCV[,y]))})), ncol = 3, byrow = T))
   MyRan$Effect <- colnames(x$VCV)
