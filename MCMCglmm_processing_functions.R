@@ -8,14 +8,13 @@
 #4. Settings for workbook
 #5. Custom contrasts fixed
 #6. Custom contrasts random
-#7. ICC
 
 #######################################
 ###--- 1. ReportRandomVarianceMCMC
 #######################################
 
 
-ReportRandomVarianceMCMC = function(x){
+ReportRandomVarianceMCMC = function(x, roundto = 3){
   
   library(reshape);library(MCMCglmm)
   
@@ -23,7 +22,7 @@ ReportRandomVarianceMCMC = function(x){
   MyRan$Effect <- colnames(x$VCV)
   MyRan[,c(1,2,3)] <- round(MyRan[,c(1,2,3)],10) #rounding as sometimes covars are not identical 
   MyRan <- MyRan[!duplicated(MyRan[,c(1,2,3)]) & !duplicated(MyRan[,c(1,2,3)], fromLast = TRUE),] #Remove covariances by deleting rows appearing twice
-  MyRan[,c("X1","X2","X3")] <- round(MyRan[,c("X1","X2","X3")],3)
+  MyRan[,c("X1","X2","X3")] <- round(MyRan[,c("X1","X2","X3")],roundto)
   
   #Split by levels and adjust variance names
   if(length(unlist(strsplit(MyRan$Effect, split = "\\."))) == nrow(MyRan)){
@@ -190,39 +189,6 @@ RandomEffectContrasts = function(model,Eff1,Eff2){
   out <- data.frame('Effects'=Name,"Estimate"=ModeCI, "pMCMC"=round(pDiff,3))
   colnames(out) = c("Variance Contrasts","Posterior Mode (CI)","pMCMC")
   return(out)
-}
-
-
-#######################################
-###--- 7. Intraclass correleation coefficient
-#######################################
-
-ICCs = function(model, link_var, roundto = 2){
-  #link_var = allows logit & probit, the default is gaussian, and is used to calculate ICCs correctly. 
-  print("WARNING: Does not work with: random slopes, phylogenies and sampling variance for now")
-  
-  #link distribution
-  link_var[link_var=="gaussian"]<-0
-  link_var[link_var=="poisson"]<-0
-  link_var[link_var=="logit"]<-pi^2/3
-  link_var[link_var=="probit"]<-1
-  
-  #get vars
-  Vars <- ReportRandomVarianceMCMC(model)[c("Random Effects: Variances","Level")]
-  colnames(Vars)[1] <- "Var"
-  #"units" was automatically renamed to "residuals"; we reverse it
-  Vars$Level[Vars$Level %in% "residuals"] <- "units"
-  myvars <- model$VCV[,colnames(model$VCV) %in% Vars$Level]
-  
-  #get var sum
-  tsumvar <- rowSums(myvars) #calculate sum of variances
-  tsumvar <- tsumvar + as.numeric(link_var) #Add distribution variance
-  
-  #estimate icc
-  icc <- (myvars/tsumvar)*100
-  icc_est <- paste(round(posterior.mode(icc),roundto)," (",round(HPDinterval(icc)[,1],roundto), ",",round(HPDinterval(icc)[,2],roundto),")",sep="")
-  icc_out <- data.frame("ICC" = icc_est, "Variable" = colnames(icc))
-  return(icc_out)
 }
 
 
