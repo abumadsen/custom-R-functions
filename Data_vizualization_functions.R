@@ -3,6 +3,7 @@
 
 #1. Pretty table for pdf knitting
 #2. Pretty MCMCCglmmm table for pdf knitting
+#3. Pretty table for html knitting
 
 #######################################
 ###--- 1. Pretty table for pdf knitting
@@ -33,4 +34,14 @@ prettyMCtable = function(mydf, myfootnote = NULL, myfontsize = 7){
                   !is.na(as.numeric(as.character(mydf_renam[,"pMCMC"])))) %>%
     collapse_rows(columns = 1, latex_hline = "major", valign = "middle") %>%
     footnote(general = myfootnote, general_title = "")
+}
+
+#######################################
+###--- 1. Pretty table for html knitting
+#######################################
+
+plot.table = function(x){
+  library(kableExtra)
+  knitr::kable(x, format = "html", row.names = TRUE) %>%
+    kable_styling(bootstrap_options = c("striped","condensed"), full_width = F, position = "left")
 }
