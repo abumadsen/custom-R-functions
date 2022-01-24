@@ -8,6 +8,7 @@
 #4. Settings for workbook
 #5. Custom contrasts fixed
 #6. Custom contrasts random
+#7. R2 marginal (not finished!)
 
 #######################################
 ###--- 1. ReportRandomVarianceMCMC
@@ -191,4 +192,27 @@ RandomEffectContrasts = function(model,Eff1,Eff2){
   return(out)
 }
 
+#######################################
+###--- 7. R2 marginal (not finished!)
+#######################################
+
+#This is the raw version I got from Charlie
+#I need to create the distvar variable, which is probably something like this:
+
+# link_var[link_var=="gaussian"]<-0
+# link_var[link_var=="poisson"]<-0
+# link_var[link_var=="logit"]<-pi^2/3
+# link_var[link_var=="probit"]<-1
+
+#R2 Marginal function: Code from Sanchez-Tojar et al 2018 eLife modified into a function for calculation R2marginal re Nakagawa and Schielzeth 2013. distVar: logit = pi^2/3, log = log(1/exp(intercept)+1)
+R2marginal<-function(model,distVar=0) {
+  model$VCV<-model$VCV[, colnames(model$VCV) !="sqrt(mev):sqrt(mev).meta"]#remove inverse weights
+  vmVarF<-numeric(dim(model$Sol)[1])
+  for(i in 1:dim(model$Sol)[1]){
+    Var<-var(as.vector(model$Sol[i,c(1:model$Fixed$nfl)] %*% t(model$X)))
+    vmVarF[i]<-Var}
+  R2m<-as.mcmc(100*(vmVarF/(vmVarF+rowSums(model$VCV)+distVar)))
+  R2m<-paste(round(mean(R2m),2)," (",round(HPDinterval(R2m)[,1],2), " , ",round(HPDinterval(R2m)[,2],2),")",sep="")
+  return(R2m)
+}
 
