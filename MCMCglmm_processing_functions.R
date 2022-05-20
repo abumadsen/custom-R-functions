@@ -42,22 +42,19 @@ FixDuplicateIntercepts = function(x){
 #######################################
 
 
-ReportRandomVarianceMCMC = function(x, roundto = 3){
+ReportRandomVarianceMCMC = function(xraw, roundto = 3){
   
   library(reshape);library(MCMCglmm)
   
-  #in case of duplicated colnames I extend them temporarily
-  add <- seq(1, length(colnames(x$VCV)))
-  add2 <- ifelse(nchar(add) == 1, paste("0",add, sep = ""),add)
-  colnames(x$VCV) <- paste(colnames(x$VCV), add2, sep = "_")
+  #Check if duplicate intercept variances (e.g. if two separate slopes are fitted, both on damid)
+  x <- FixDuplicateIntercepts(xraw)
   
   MyRan <- data.frame(matrix(unlist(lapply(colnames(x$VCV), FUN = function(y){cbind(posterior.mode(x$VCV[,y]), HPDinterval(x$VCV[,y]))})), ncol = 3, byrow = T))
   MyRan$Effect <- colnames(x$VCV)
   MyRan[,c(1,2,3)] <- round(MyRan[,c(1,2,3)],10) #rounding as sometimes covars are not identical 
   MyRan <- MyRan[!duplicated(MyRan[,c(1,2,3)]) & !duplicated(MyRan[,c(1,2,3)], fromLast = TRUE),] #Remove covariances by deleting rows appearing twice
   MyRan[,c("X1","X2","X3")] <- round(MyRan[,c("X1","X2","X3")],roundto)
-  MyRan$Effect <- substr(MyRan$Effect,1, nchar(MyRan$Effect)-3) #Remove name extention from above
-  
+
   #Remove any at.level text as the "." confuses code and it is long
   MyRan$Effect[grep("at.level", MyRan$Effect)] <- gsub("at.level","at",MyRan$Effect[grep("at.level", MyRan$Effect)])
   #Remove \"
@@ -125,9 +122,9 @@ ReportFixedMCMC = function(x, remove = NULL){
 ###--- 3. ReportCorrelationsMCMC
 #######################################
 
-ReportCorrelationsMCMC = function(x, roundto = 2){
+ReportCorrelationsMCMC = function(xraw, roundto = 2){
   #Get vars
-  Vars <- ReportRandomVarianceMCMC(x)[c("Random Effects: Variances","Level")]
+  Vars <- ReportRandomVarianceMCMC(xraw)[c("Random Effects: Variances","Level")]
   colnames(Vars)[1] <- "Var"
   #"units" was automatically renamed to "residuals"; we reverse it
   Vars$Level[Vars$Level %in% "residuals"] <- "units"
@@ -145,6 +142,10 @@ ReportCorrelationsMCMC = function(x, roundto = 2){
   Covars$CovarNames <- paste(paste(Covars$Var,Covars$Var.1,sep = ":"),Covars$Level, sep = ".") #Gives two of each covar, just as in summary$VCV
   Covars$VarNames1 <- paste(paste(Covars$Var,Covars$Var,sep = ":"),Covars$Level, sep = ".")
   Covars$VarNames2 <- paste(paste(Covars$Var.1,Covars$Var.1,sep = ":"),Covars$Level, sep = ".")
+  
+  #Check if duplicate intercept variances (e.g. if two separate slopes are fitted, both on damid)
+  x <- FixDuplicateIntercepts(xraw)
+  
   #Estimate correlations
   corrs <- NULL
   corrs=matrix(nrow = nrow(x$VCV), ncol = 0)
