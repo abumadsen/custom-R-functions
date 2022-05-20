@@ -19,11 +19,22 @@ ReportRandomVarianceMCMC = function(x, roundto = 3){
   
   library(reshape);library(MCMCglmm)
   
+  #in case of duplicated colnames I extend them temporarily
+  add <- seq(1, length(colnames(x$VCV)))
+  add2 <- ifelse(nchar(add) == 1, paste("0",add, sep = ""),add)
+  colnames(x$VCV) <- paste(colnames(x$VCV), add2, sep = "_")
+  
   MyRan <- data.frame(matrix(unlist(lapply(colnames(x$VCV), FUN = function(y){cbind(posterior.mode(x$VCV[,y]), HPDinterval(x$VCV[,y]))})), ncol = 3, byrow = T))
   MyRan$Effect <- colnames(x$VCV)
   MyRan[,c(1,2,3)] <- round(MyRan[,c(1,2,3)],10) #rounding as sometimes covars are not identical 
   MyRan <- MyRan[!duplicated(MyRan[,c(1,2,3)]) & !duplicated(MyRan[,c(1,2,3)], fromLast = TRUE),] #Remove covariances by deleting rows appearing twice
   MyRan[,c("X1","X2","X3")] <- round(MyRan[,c("X1","X2","X3")],roundto)
+  MyRan$Effect <- substr(MyRan$Effect,1, nchar(MyRan$Effect)-3) #Remove name extention from above
+  
+  #Remove any at.level text as the "." confuses code and it is long
+  MyRan$Effect[grep("at.level", MyRan$Effect)] <- gsub("at.level","at",MyRan$Effect[grep("at.level", MyRan$Effect)])
+  #Remove \"
+  MyRan$Effect <- gsub("\"","",MyRan$Effect)
   
   #Split by levels and adjust variance names
   if(length(unlist(strsplit(MyRan$Effect, split = "\\."))) == nrow(MyRan)){
