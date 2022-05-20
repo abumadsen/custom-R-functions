@@ -2,6 +2,7 @@
 #Mads F. Schou
 #Functions for data processing of MCMCglmm
 
+#0. Dix duplicate intercepts
 #1. ReportRandomVarianceMCMC: Summarizes variance from random effects
 #2. ReportFixedMCMC: Summarizes effect sizes and signifcance of fixed effects
 #3. ReportCorrelationsMCMC: Estimate correlations using covariances and variances
@@ -9,6 +10,32 @@
 #5. Custom contrasts fixed
 #6. Custom contrasts random
 #7. R2 marginal (not finished!)
+
+
+#######################################
+###--- 0. Dix duplicate intercepts
+#######################################
+
+FixDuplicateIntercepts = function(x){
+  #Check if duplicate intercept variances (e.g. if two separate slopes are fitted, both on damid)
+  
+  interceptvars <- colnames(x$VCV)[grep("\\(Intercept\\):\\(Intercept\\)",colnames(x$VCV))]
+  
+  if(length(interceptvars) == 2 & length(unique(interceptvars)) == 1){ #two identical
+    print("WARNING: FIXING DUPLICATE INTERCEPT VARIANCE NAMING!")
+    #group the two covariance matrices
+    hits <- grep("\\(Intercept\\):\\(Intercept\\)",colnames(x$VCV))
+    #Finding group one and changing intercept to intercept1
+    COVAR1 <- colnames(x$VCV)[c(hits[1]+c(0,1,2))]
+    colnames(x$VCV)[c(hits[1]+c(0,1,2))] <- gsub("\\(Intercept\\)", "Intercept1", COVAR1)
+    
+    #Finding group two and changing intercept to intercept2
+    COVAR2 <- colnames(x$VCV)[c(hits[2]+c(0,1,2))]
+    colnames(x$VCV)[c(hits[2]+c(0,1,2))] <- gsub("\\(Intercept\\)", "Intercept2", COVAR2)
+  }
+  return(x)
+}
+
 
 #######################################
 ###--- 1. ReportRandomVarianceMCMC
