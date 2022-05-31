@@ -22,21 +22,20 @@ FixDuplicateIntercepts = function(x){
   
   interceptvars <- colnames(x$VCV)[grep("\\(Intercept\\):\\(Intercept\\)",colnames(x$VCV))]
   
-  if(length(interceptvars) == 2 & length(unique(interceptvars)) == 1){ #two identical
+  if(length(interceptvars) >= 2 & length(unique(interceptvars)) == 1){ #two or more identical
     print("WARNING: FIXING DUPLICATE INTERCEPT VARIANCE NAMING!")
     #group the two covariance matrices
     hits <- grep("\\(Intercept\\):\\(Intercept\\)",colnames(x$VCV))
-    #Finding group one and changing intercept to intercept1
-    COVAR1 <- colnames(x$VCV)[c(hits[1]+c(0,1,2))]
-    colnames(x$VCV)[c(hits[1]+c(0,1,2))] <- gsub("\\(Intercept\\)", "Intercept1", COVAR1)
     
-    #Finding group two and changing intercept to intercept2
-    COVAR2 <- colnames(x$VCV)[c(hits[2]+c(0,1,2))]
-    colnames(x$VCV)[c(hits[2]+c(0,1,2))] <- gsub("\\(Intercept\\)", "Intercept2", COVAR2)
+    #Finding each group (var covar matrix)and changing intercept to intercept#
+    for(i in 1:length(interceptvars)){
+      COVAR_TEMP <- colnames(x$VCV)[c(hits[i]+c(0,1,2))]
+      NewInt <- paste("Intercept",i,sep = "")
+      colnames(x$VCV)[c(hits[i]+c(0,1,2))] <- gsub("\\(Intercept\\)", NewInt, COVAR_TEMP)
+    }
   }
   return(x)
 }
-
 
 #######################################
 ###--- 0.5 Fix random variable names
