@@ -2,7 +2,8 @@
 #Mads F. Schou
 #Functions for data processing of MCMCglmm
 
-#0. Dix duplicate intercepts
+#0. Fix duplicate intercepts
+#0.5 Fix variable names
 #1. ReportRandomVarianceMCMC: Summarizes variance from random effects
 #2. ReportFixedMCMC: Summarizes effect sizes and signifcance of fixed effects
 #3. ReportCorrelationsMCMC: Estimate correlations using covariances and variances
@@ -13,7 +14,7 @@
 
 
 #######################################
-###--- 0. Dix duplicate intercepts
+###--- 0. Fix duplicate intercepts
 #######################################
 
 FixDuplicateIntercepts = function(x){
@@ -38,6 +39,18 @@ FixDuplicateIntercepts = function(x){
 
 
 #######################################
+###--- 0.5 Fix random variable names
+#######################################
+
+FixVarNames = function(x){
+  #Remove any at.level text as the "." confuses code and it is long
+  x[grep("at.level", x)] <- gsub("at.level","at",x[grep("at.level", x)])
+  #Remove \"
+  x <- gsub("\"","",x)
+  return(x)
+}
+
+#######################################
 ###--- 1. ReportRandomVarianceMCMC
 #######################################
 
@@ -55,10 +68,7 @@ ReportRandomVarianceMCMC = function(xraw, roundto = 3){
   MyRan <- MyRan[!duplicated(MyRan[,c(1,2,3)]) & !duplicated(MyRan[,c(1,2,3)], fromLast = TRUE),] #Remove covariances by deleting rows appearing twice
   MyRan[,c("X1","X2","X3")] <- round(MyRan[,c("X1","X2","X3")],roundto)
 
-  #Remove any at.level text as the "." confuses code and it is long
-  MyRan$Effect[grep("at.level", MyRan$Effect)] <- gsub("at.level","at",MyRan$Effect[grep("at.level", MyRan$Effect)])
-  #Remove \"
-  MyRan$Effect <- gsub("\"","",MyRan$Effect)
+  MyRan$Effect <- FixVarNames(MyRan$Effect)
   
   #Split by levels and adjust variance names
   if(length(unlist(strsplit(MyRan$Effect, split = "\\."))) == nrow(MyRan)){
@@ -128,8 +138,7 @@ ReportCorrelationsMCMC = function(xraw, roundto = 2){
   colnames(Vars)[1] <- "Var"
   #"units" was automatically renamed to "residuals"; we reverse it
   Vars$Level[Vars$Level %in% "residuals"] <- "units"
-  #Vars <- Vars[Vars$Level != "units",]
-  
+
   #Get covars within each level
   Covars <- as.numeric()
   for(mylevel in levels(factor(Vars$Level))){
@@ -145,6 +154,7 @@ ReportCorrelationsMCMC = function(xraw, roundto = 2){
   
   #Check if duplicate intercept variances (e.g. if two separate slopes are fitted, both on damid)
   x <- FixDuplicateIntercepts(xraw)
+  colnames(x$VCV) <- FixVarNames(colnames(x$VCV))
   
   #Estimate correlations
   corrs <- NULL
