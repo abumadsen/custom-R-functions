@@ -22,7 +22,7 @@ FixDuplicateIntercepts = function(x){
   
   interceptvars <- colnames(x$VCV)[grep("\\(Intercept\\):\\(Intercept\\)",colnames(x$VCV))]
   
-  if(length(interceptvars) >= 2 & length(unique(interceptvars)) == 1){ #two or more identical
+  if(length(interceptvars) >= 2 & length(unique(interceptvars)) != length(interceptvars)){ #two or more identical
     print("WARNING: FIXING DUPLICATE INTERCEPT VARIANCE NAMING!")
     #group the two covariance matrices
     hits <- grep("\\(Intercept\\):\\(Intercept\\)",colnames(x$VCV))
