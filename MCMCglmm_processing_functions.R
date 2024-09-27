@@ -104,7 +104,59 @@ ReportRandomVarianceMCMC = function(xraw, roundto = 3){
 }
 
 
-#Usage: ranmodeOut <- ReportRandomVarianceMCMC(mcmc2)
+#######################################
+###--- 1.2 ReportRandomVarianceMCMC as Median
+#######################################
+
+
+ReportRandomVarianceMCMCmedian = function(xraw, roundto = 3){
+  
+  library(reshape);library(MCMCglmm)
+  
+  #Check if duplicate intercept variances (e.g. if two separate slopes are fitted, both on damid)
+  x <- FixDuplicateIntercepts(xraw)
+  
+  MyRan <- data.frame(matrix(unlist(lapply(colnames(x$VCV), FUN = function(y){cbind(median(x$VCV[,y]), HPDinterval(x$VCV[,y]))})), ncol = 3, byrow = T))
+  MyRan$Effect <- colnames(x$VCV)
+  MyRan[,c(1,2,3)] <- round(MyRan[,c(1,2,3)],10) #rounding as sometimes covars are not identical 
+  MyRan <- MyRan[!duplicated(MyRan[,c(1,2,3)]) & !duplicated(MyRan[,c(1,2,3)], fromLast = TRUE),] #Remove covariances by deleting rows appearing twice
+  MyRan[,c("X1","X2","X3")] <- round(MyRan[,c("X1","X2","X3")],roundto)
+
+  MyRan$Effect <- FixVarNames(MyRan$Effect)
+  
+  #Split by levels and adjust variance names
+  if(length(unlist(strsplit(MyRan$Effect, split = "\\."))) == nrow(MyRan)){
+    MyRan[c("Random Effects: Variances","Level")] <- MyRan$Effect #If not levels (no slopes), just repeat names across columns
+  }else{
+    MySplit <- colsplit(MyRan$Effect, split = "\\.", names = c("RandomEffect","Level"))
+    MyRan$Level <- as.character(MySplit[, ncol(MySplit)])
+    MyRan$RandomEffect <- apply(MyRan,1, FUN = function(x) gsub(paste(".",x[5],sep = ""),"", x[4])) #Remove level part
+    #Adjust variance names
+    
+    for(i in 1:nrow(MyRan)){
+      
+      MySplit <- colsplit(MyRan$RandomEffect[i], split = "\\:", names = c("out"))
+      if(ncol(MySplit) == 1){
+        MyRan[i,c("Random Effects: Variances")] <- as.character(MyRan$RandomEffect[i])
+        }
+      if(ncol(MySplit) == 2){
+        MyRan[i,c("Random Effects: Variances")] <- as.character(colsplit(MyRan$RandomEffect[i], split = "\\:", names = c("out","Random Effects: Variances"))[,2])
+        }
+      if(ncol(MySplit) == 4){
+        MyRan[i,c("Random Effects: Variances")] <- as.character(apply(colsplit(MyRan$RandomEffect[i], split = "\\:", names = c("out","Random Effects: Variances"))[,c(1,2)], 1, function(x) paste(x, collapse = ":")))
+      }
+      if(ncol(MySplit) == 6){
+        MyRan[i,c("Random Effects: Variances")] <- as.character(apply(colsplit(MyRan$RandomEffect[i], split = "\\:", names = c("out","Random Effects: Variances"))[,c(1,2,3)], 1, function(x) paste(x, collapse = ":")))
+      }
+    }
+  }
+  
+  MyRan[,c("Random Effects: Variances")] <-  gsub("units","residuals",MyRan[,c("Random Effects: Variances")])
+  MyRan[,c("Level")] <-  gsub("units","residuals",MyRan[,c("Level")])
+  
+  MyRan["Posterior Median (CI)"] <- paste(MyRan$X1, " (", MyRan$X2, ",", MyRan$X3, ")", sep = "")
+  return(MyRan[,c("Random Effects: Variances","Posterior Median (CI)","Level")])
+}
 
 #######################################
 ###--- 2. ReportFixedMCMC
