@@ -241,6 +241,70 @@ ReportCorrelationsMCMC = function(xraw, roundto = 2){
 
 #Usage: CorrOut <- ReportCorrelationsMCMC(mcmc2)
 
+
+                                                                      
+#######################################
+###--- 3.1 ReportCorrelationsMCMCmedian
+#######################################
+
+ReportCorrelationsMCMCmedian = function(xraw, roundto = 2){
+  #Get vars
+  Vars <- ReportRandomVarianceMCMC(xraw)[c("Random Effects: Variances","Level")]
+  colnames(Vars)[1] <- "Var"
+  #"units" was automatically renamed to "residuals"; we reverse it
+  Vars$Level[Vars$Level %in% "residuals"] <- "units"
+
+  #Get covars within each level
+  Covars <- as.numeric()
+  for(mylevel in levels(factor(Vars$Level))){
+    tempCovars <- expand.grid(Vars[Vars$Level %in% mylevel ,c(1,1)])
+    tempCovars$Level <- mylevel
+    Covars <- rbind(Covars,tempCovars)
+  }
+  Covars <- Covars[Covars$Var != Covars$Var.1,]
+  Covars <- Covars[!duplicated(Covars),]
+  Covars$CovarNames <- paste(paste(Covars$Var,Covars$Var.1,sep = ":"),Covars$Level, sep = ".") #Gives two of each covar, just as in summary$VCV
+  Covars$VarNames1 <- paste(paste(Covars$Var,Covars$Var,sep = ":"),Covars$Level, sep = ".")
+  Covars$VarNames2 <- paste(paste(Covars$Var.1,Covars$Var.1,sep = ":"),Covars$Level, sep = ".")
+  
+  #Check if duplicate intercept variances (e.g. if two separate slopes are fitted, both on damid)
+  x <- FixDuplicateIntercepts(xraw)
+  colnames(x$VCV) <- FixVarNames(colnames(x$VCV))
+  
+  #Estimate correlations
+  corrs <- NULL
+  corrs=matrix(nrow = nrow(x$VCV), ncol = 0)
+  for(i in 1:nrow(Covars)){
+    covar.post <- x$VCV[,colnames(x$VCV) %in% Covars$CovarNames[i]]
+    var1.post <- x$VCV[,colnames(x$VCV) %in% Covars$VarNames1[i]]
+    var2.post <- x$VCV[,colnames(x$VCV) %in% Covars$VarNames2[i]]
+    tmpcor<-covar.post/sqrt(var1.post*var2.post)
+    
+    if(!all(is.na(tmpcor[]))){ #If not empty: covar estimated by model
+      corrs<-cbind(corrs,tmpcor)
+      colnames(corrs)[ncol(corrs)] <- Covars$CovarNames[i]
+    }
+  }
+  corrs<-as.mcmc(corrs)
+  
+  #Cor Summaries
+  cor1=paste(round(apply(corrs, 2,median),roundto)," (",round(HPDinterval(corrs)[,1],roundto), ",",round(HPDinterval(corrs)[,2],roundto),")",sep="")
+  ncors<-ifelse(is.null(dim(corrs)), 1,dim(corrs)[2])
+  nits<-ifelse(is.null(dim(corrs)),length(corrs), dim(corrs)[1])
+  if(ncors >1){
+    pCor=pmax(0.5/nits, pmin(colSums(corrs[,1:ncors, drop = FALSE] > 0)/nits, 1 - colSums(corrs[, 1:ncors, drop = FALSE] > 0)/nits))*2
+  } else  {
+    pCor=pmax(0.5/nits, pmin(sum(corrs[,drop = FALSE] > 0)/nits, 1 - sum(corrs[, drop = FALSE] > 0)/nits))*2
+  }
+  randomCorr<-data.frame("Random Effects: Correlations"=colnames(corrs),"Posterior Mode (CI)"=cor1,"pMCMC"=round(pCor,3), check.names=FALSE)
+  #Remove duplicates (each corr will apear twice as they do so in the VCV)
+  randomCorr <- randomCorr[!duplicated(randomCorr$`Posterior Mode (CI)`),]
+  randomCorr[,c("Random Effects: Correlations")] <-  gsub("units","residuals",randomCorr[,c("Random Effects: Correlations")])
+  return(randomCorr)
+}
+
+#Usage: CorrOut <- ReportCorrelationsMCMC(mcmc2)
+
 #######################################
 ###--- 4. Settings for workbook
 #######################################
