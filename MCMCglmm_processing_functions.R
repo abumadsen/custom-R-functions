@@ -296,7 +296,7 @@ ReportCorrelationsMCMCmedian = function(xraw, roundto = 2){
   } else  {
     pCor=pmax(0.5/nits, pmin(sum(corrs[,drop = FALSE] > 0)/nits, 1 - sum(corrs[, drop = FALSE] > 0)/nits))*2
   }
-  randomCorr<-data.frame("Random Effects: Correlations"=colnames(corrs),"Posterior Mode (CI)"=cor1,"pMCMC"=round(pCor,3), check.names=FALSE)
+  randomCorr<-data.frame("Random Effects: Correlations"=colnames(corrs),"Posterior Median (CI)"=cor1,"pMCMC"=round(pCor,3), check.names=FALSE)
   #Remove duplicates (each corr will apear twice as they do so in the VCV)
   randomCorr <- randomCorr[!duplicated(randomCorr$`Posterior Mode (CI)`),]
   randomCorr[,c("Random Effects: Correlations")] <-  gsub("units","residuals",randomCorr[,c("Random Effects: Correlations")])
