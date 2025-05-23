@@ -179,6 +179,28 @@ ReportFixedMCMC = function(x, remove = NULL){
 
 #Usage: fixefecOut <- ReportFixedMCMC(mcmc2)
 
+                                                                      
+#######################################
+###--- 2.5 ReportFixedMedianMCMC
+#######################################
+
+ReportFixedMedianMCMC <- function(x, roundto = 2){
+  MyFix <- data.frame(matrix(unlist(lapply(colnames(x$Sol), FUN = function(y){cbind(median(x$Sol[,y]), HPDinterval(x$Sol[,y]))})), ncol = 3, byrow = T))
+  MyFix[,c("X1","X2","X3")] <- round(MyFix[,c("X1","X2","X3")],roundto)
+  MyFix["Posterior Median (CI)"] <- paste(MyFix$X1, " (", MyFix$X2, ",", MyFix$X3, ")", sep = "")
+  MyFix$Fixed <- colnames(x$Sol)
+  
+  MySol <- data.frame(summary(x)$solutions)
+  MySol$Fixed <- row.names(MySol)
+  MySol[,c("pMCMC")] <- round(MySol[,c("pMCMC")],3)
+  
+  MyAll <- merge(MySol,MyFix, by = "Fixed")
+  MyAll[,c("Fixed")] <-  gsub("\\(Intercept\\)","Intercept",MyAll[,c("Fixed")])
+  return(MyAll[,c("Fixed","Posterior Median (CI)","pMCMC")])
+}
+
+#Usage: fixefecOut <- ReportFixedMedianMCMC(mcmc2)
+
 #######################################
 ###--- 3. ReportCorrelationsMCMC
 #######################################
