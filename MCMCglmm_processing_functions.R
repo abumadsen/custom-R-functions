@@ -184,7 +184,7 @@ ReportFixedMCMC = function(x, remove = NULL){
 ###--- 2.5 ReportFixedMedianMCMC
 #######################################
 
-ReportFixedMedianMCMC <- function(x, roundto = 2){
+ReportFixedMCMCmedian <- function(x, roundto = 2){
   MyFix <- data.frame(matrix(unlist(lapply(colnames(x$Sol), FUN = function(y){cbind(median(x$Sol[,y]), HPDinterval(x$Sol[,y]))})), ncol = 3, byrow = T))
   MyFix[,c("X1","X2","X3")] <- round(MyFix[,c("X1","X2","X3")],roundto)
   MyFix["Posterior Median (CI)"] <- paste(MyFix$X1, " (", MyFix$X2, ",", MyFix$X3, ")", sep = "")
