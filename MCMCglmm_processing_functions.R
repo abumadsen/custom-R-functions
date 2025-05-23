@@ -357,9 +357,9 @@ FixedEffectContrasts = function(model,Eff1,Eff2){
   Diff <- model$Sol[,Eff1]-model$Sol[,Eff2]
   Name <- paste(Eff1, " vs ",Eff2, sep = " ")
   pDiff=pmax(0.5/length(Diff), pmin(sum(Diff[,drop = FALSE] > 0)/length(Diff), 1 - sum(Diff[, drop = FALSE] > 0)/length(Diff)))*2
-  ModeCI=paste(round(posterior.mode(Diff),2)," (",round(HPDinterval(Diff)[,1],2), ",",round(HPDinterval(Diff)[,2],2),")",sep="")
+  ModeCI=paste(round(median(Diff),2)," (",round(HPDinterval(Diff)[,1],2), ",",round(HPDinterval(Diff)[,2],2),")",sep="")
   out <- data.frame('Effects'=Name,"Estimate"=ModeCI, "pMCMC"=round(pDiff,3))
-  colnames(out) = c("Fixed Effect Contrasts","Posterior Mode (CI)","pMCMC")
+  colnames(out) = c("Fixed Effect Contrasts","Posterior Median (CI)","pMCMC")
   return(out)
 }
 
@@ -372,9 +372,9 @@ RandomEffectContrasts = function(model,Eff1,Eff2){
   Diff <- model$VCV[,Eff1]-model$VCV[,Eff2]
   Name <- paste(Eff1, " vs ",Eff2, sep = " ")
   pDiff=pmax(0.5/length(Diff), pmin(sum(Diff[,drop = FALSE] > 0)/length(Diff), 1 - sum(Diff[, drop = FALSE] > 0)/length(Diff)))*2
-  ModeCI=paste(round(posterior.mode(Diff),3)," (",round(HPDinterval(Diff)[,1],3), ",",round(HPDinterval(Diff)[,2],3),")",sep="")
+  ModeCI=paste(round(median(Diff),3)," (",round(HPDinterval(Diff)[,1],3), ",",round(HPDinterval(Diff)[,2],3),")",sep="")
   out <- data.frame('Effects'=Name,"Estimate"=ModeCI, "pMCMC"=round(pDiff,3))
-  colnames(out) = c("Variance Contrasts","Posterior Mode (CI)","pMCMC")
+  colnames(out) = c("Variance Contrasts","Posterior Median (CI)","pMCMC")
   return(out)
 }
 
