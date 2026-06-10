@@ -73,8 +73,7 @@ ReportRandomVarianceMCMC = function(xraw, roundto = 3){
   if(length(unlist(strsplit(MyRan$Effect, split = "\\."))) == nrow(MyRan)){
     MyRan[c("Random Effects: Variances","Level")] <- MyRan$Effect #If not levels (no slopes), just repeat names across columns
   }else{
-    MySplit <- colsplit(MyRan$Effect, split = "\\.", names = c("RandomEffect","Level"))
-    MyRan$Level <- as.character(MySplit[, ncol(MySplit)])
+    MyRan$Level <- sub("^[^.]*\\.", "", MyRan$Effect)
     MyRan$RandomEffect <- apply(MyRan,1, FUN = function(x) gsub(paste(".",x[5],sep = ""),"", x[4])) #Remove level part
     #Adjust variance names
     
